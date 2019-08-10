@@ -3,6 +3,8 @@ import gevent
 
 from flask import Flask, request, jsonify, redirect
 
+import WXlib
+
 app = Flask(__name__)
 app_http = Flask(__name__)
 
@@ -22,6 +24,12 @@ def favicon():
 @app.route('/')
 def index():
     return '<h1>Hello!</h1>'
+
+
+@app.route('/test', methods=['POST'])
+def test():
+    if request.method == 'POST':
+        return request.data, 200
 
 
 if __name__ == '__main__':
