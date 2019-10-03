@@ -1,6 +1,7 @@
 from gevent import monkey, pywsgi
 import gevent
 
+import json
 from flask import Flask, request, jsonify, redirect
 
 import WXlib
@@ -26,11 +27,26 @@ def index():
     return '<h1>Hello!</h1>'
 
 
-@app.route('/test', methods=['POST'])
-def test():
+@app.route('/wx_sock')
+def wechat_socket(locat):
     if request.method == 'POST':
-        return request.data, 200
+        post_data = request.get_json()
+        res, code = app_router.route(
+            target="sock", path=".", data=post_data)
+        return jsonify(res), code
 
+
+class router(object):
+    def __init__(self, route_list):
+        self.route_list = route_list
+
+    def route(self, target, path, data):
+        eval_string = self.route_list[target][path] + "(data)"
+        res, code = eval(eval_string)
+        return res, code
+
+
+app_router = router(json.load(open("config/route.json", "r")))
 
 if __name__ == '__main__':
     monkey.patch_all()
