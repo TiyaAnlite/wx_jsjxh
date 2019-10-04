@@ -2,9 +2,11 @@ from gevent import monkey, pywsgi
 import gevent
 
 import json
+import os
 from flask import Flask, request, jsonify, redirect
 
 import WXlib
+import handle
 
 app = Flask(__name__)
 app_http = Flask(__name__)
@@ -28,12 +30,30 @@ def index():
 
 
 @app.route('/wx_sock')
-def wechat_socket(locat):
+def wechat_socket():
     if request.method == 'POST':
         post_data = request.get_json()
         res, code = app_router.route(
             target="sock", path=".", data=post_data)
+        return res, code
+    if request.method == 'GET':
+        get_data = request.args
+        res, code = app_router.route(
+            target="sock_get", path=".", data=get_data)
+        return res, code
+
+@app.route('/wx_api/<path:app_path>', methods=['POST'])
+def codelabApi(app_path):
+    if request.method == 'POST':
+        post_data = request.get_json()
+        res, code = app_router.route(
+            target="api", path=app_path, data=post_data)
         return jsonify(res), code
+    if request.method == 'GET':
+        get_data = request.args.listvalues()
+        for i in get_data:
+            print(i, "\n")
+        return "", 200
 
 
 class router(object):
@@ -45,8 +65,8 @@ class router(object):
         res, code = eval(eval_string)
         return res, code
 
-
-app_router = router(json.load(open("config/route.json", "r")))
+codelab = handle.wx_hzjx(json.load(open(os.path.join("config", "resmod.json"), "r")))
+app_router = router(json.load(open(os.path.join("config", "route.json"), "r")))
 
 if __name__ == '__main__':
     monkey.patch_all()
