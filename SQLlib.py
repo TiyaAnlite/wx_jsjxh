@@ -1,6 +1,6 @@
 import copy
 
-import MySQLdb
+import pymysql
 
 
 class mainSQL(object):
@@ -12,7 +12,7 @@ class mainSQL(object):
         self.password = password
         self.database = database
         self.charset = charset
-        self.db = MySQLdb.connect(host=self.host,
+        self.db = pymysql.connect(host=self.host,
                                   port=self.port,
                                   user=self.user,
                                   passwd=self.password,
@@ -81,7 +81,7 @@ class mainSQL(object):
         sql = sql.format(**fill_data)
 
         self._link_checkout()
-        cursor = self.db.cursor(MySQLdb.cursors.DictCursor)
+        cursor = self.db.cursor(pymysql.cursors.DictCursor)
         try:
             cursor.execute(sql)
             results = cursor.fetchall()
@@ -259,7 +259,7 @@ class mainSQL(object):
             sql, fulltext_mode, keyword_line, keyword, compare_mode)
 
         self._link_checkout()
-        cursor = self.db.cursor(MySQLdb.cursors.DictCursor)
+        cursor = self.db.cursor(pymysql.cursors.DictCursor)
         try:
             cursor.execute(sql)
             results = cursor.fetchall()
@@ -315,7 +315,7 @@ class mainSQL(object):
                 sql += " AND "
 
         self._link_checkout()
-        cursor = self.db.cursor(MySQLdb.cursors.DictCursor)
+        cursor = self.db.cursor(pymysql.cursors.DictCursor)
         try:
             cursor.execute(sql)
             results = cursor.fetchall()
@@ -347,7 +347,7 @@ class mainSQL(object):
             sql, fulltext_mode, keyword_line, keyword, compare_mode)
 
         self._link_checkout()
-        cursor = self.db.cursor(MySQLdb.cursors.DictCursor)
+        cursor = self.db.cursor(pymysql.cursors.DictCursor)
         try:
             cursor.execute(sql)
             results = cursor.fetchall()
@@ -387,7 +387,7 @@ class mainSQL(object):
             operation = "INS"
 
         self._link_checkout()
-        cursor = self.db.cursor(MySQLdb.cursors.DictCursor)
+        cursor = self.db.cursor(pymysql.cursors.DictCursor)
         try:
             cursor.execute(sql)
             cursor.fetchall()
