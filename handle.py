@@ -27,7 +27,7 @@ class wx_hzjx(object):
         queue = [token, timestamp, nonce]
         queue.sort()
         sha1 = hashlib.sha1()
-        map(sha1.update, queue)
+        sha1.update("".join(queue).encode('utf-8'))
         hashcode = sha1.hexdigest()
         if hashcode == signature:
             return echostr, 200
