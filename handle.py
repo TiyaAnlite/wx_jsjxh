@@ -19,10 +19,10 @@ class wx_hzjx(object):
                            self.sql_conf["db"], self.sql_conf["charset"])
 
     def verify(self, data):
-        signature = data.get("signature")
-        timestamp = data.get("timestamp")
-        nonce = data.get("nonce")
-        echostr = data.get("echostr")
+        signature = data["signature"]
+        timestamp = data["timestamp"]
+        nonce = data["nonce"]
+        echostr = data["echostr"]
         token = self.wx_conf["token"]
         queue = [token, timestamp, nonce]
         queue.sort()

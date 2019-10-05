@@ -37,7 +37,9 @@ def wechat_socket():
             target="sock", path=".", data=post_data)
         return res, code
     if request.method == 'GET':
-        get_data = request.args
+        get_data = dict(request.args)
+        for k in get_data:
+            get_data[k] = get_data[k][0]
         res, code = app_router.route(
             target="sock_get", path=".", data=get_data)
         return res, code
