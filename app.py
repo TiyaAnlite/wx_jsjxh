@@ -7,6 +7,7 @@ from flask import Flask, request, jsonify, redirect
 
 import WXlib
 import handle
+from handle import CodeLabError
 
 app = Flask(__name__)
 app_http = Flask(__name__)
@@ -64,8 +65,17 @@ class router(object):
         self.route_list = route_list
 
     def route(self, target, path, data):
-        eval_string = self.route_list[target][path] + "(data)"
-        res, code = eval(eval_string)
+        try:
+            eval_string = self.route_list[target][path] + "(data)"
+        except KeyError:
+            res = {"code":404}
+            code = 404
+        try:
+            res, code = eval(eval_string)
+        except CodeLabError as err:
+            res = {"code":400, "message":err.message}
+            code = 400
+            print(err.message)
         return res, code
 
 

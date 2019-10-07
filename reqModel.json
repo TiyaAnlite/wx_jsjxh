@@ -1,0 +1,20 @@
+{
+    "updateMember": {
+        "activate_ticket": "str",
+        "openid": "str",
+        "card_id": "str",
+        "encrypt_code": "str",
+        "outer_str": "str"
+    },
+    "login": {
+        "code": "int"
+    },
+    "cardInfo": {
+        "session": "str",
+        "code": "str"
+    },
+    "activeCard": {
+        "session": "str",
+        "code": "str"
+    }
+}
