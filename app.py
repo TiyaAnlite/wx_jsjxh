@@ -29,20 +29,21 @@ def index():
     return '<h1>Hello!</h1>'
 
 
-@app.route('/wx_sock')
+@app.route('/wx_sock', methods=['POST', 'GET'])
 def wechat_socket():
     if request.method == 'POST':
-        post_data = request.get_json()
+        xml_data = WXlib.receive.parse_xml(request.get_data())
         res, code = app_router.route(
-            target="sock", path=".", data=post_data)
+            target="sock", path=xml_data.MsgType, data=xml_data)  # 传入XML结构对象
         return res, code
     if request.method == 'GET':
         get_data = dict(request.args)
         for k in get_data:
             get_data[k] = get_data[k][0]
         res, code = app_router.route(
-            target="sock_get", path=".", data=get_data)
+            target="sock_get", path=".", data=get_data)  # 传入字典对象
         return res, code
+
 
 @app.route('/wx_api/<path:app_path>', methods=['POST'])
 def codelabApi(app_path):
@@ -67,7 +68,9 @@ class router(object):
         res, code = eval(eval_string)
         return res, code
 
-codelab = handle.wx_hzjx(json.load(open(os.path.join("config", "resmod.json"), "r")))
+
+HZJX = handle.wx_hzjx(
+    json.load(open(os.path.join("config", "resmod.json"), "r")))
 app_router = router(json.load(open(os.path.join("config", "route.json"), "r")))
 
 if __name__ == '__main__':

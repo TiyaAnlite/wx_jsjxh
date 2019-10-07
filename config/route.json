@@ -1,11 +1,16 @@
 {
     "sock": {
-        ".": 123
+        "text": 123,
+        "image": 123,
+        "event":123
     },
     "sock_get": {
-        ".": "codelab.verify"
+        ".": "HZJX.verify"
     },
     "api": {
         ".": 123
+    },
+    "HZJX": {
+        "user_get_card": "UserGetCard"
     }
 }
