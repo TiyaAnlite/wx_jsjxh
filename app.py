@@ -5,7 +5,7 @@ import json
 import os
 from flask import Flask, request, jsonify, redirect
 
-import WXlib
+from WXlib import receive
 import handle
 from handle import CodeLabError
 
@@ -33,7 +33,7 @@ def index():
 @app.route('/wx_sock', methods=['POST', 'GET'])
 def wechat_socket():
     if request.method == 'POST':
-        xml_data = WXlib.receive.parse_xml(request.get_data())
+        xml_data = receive.parse_xml(request.get_data())
         res, code = app_router.route(
             target="sock", path=xml_data.MsgType, data=xml_data)  # 传入XML结构对象
         return res, code
