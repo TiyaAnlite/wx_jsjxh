@@ -307,6 +307,12 @@ class wx_hzjx(hzjx_mamger):
             code = 200
         return res, code
 
+    def textEnter(self, wpost_data):
+        return "success", 200
+
+    def imageEnter(self, wpost_data):
+        return "success", 200
+
 
 class CodeLabError(Exception):
     '''自定义异常类

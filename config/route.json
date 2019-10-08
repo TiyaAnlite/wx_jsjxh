@@ -1,14 +1,17 @@
 {
     "sock": {
-        "text": 123,
-        "image": 123,
-        "event":123
+        "text": "HZJX.textEnter",
+        "image": "HZJX.imageEnter",
+        "event": "HZJX.eventEnter"
     },
     "sock_get": {
         ".": "HZJX.verify"
     },
     "api": {
-        ".": 123
+        "updateMember": "HZJX.updateMember",
+        "login": "HZJX.login",
+        "cardInfo": "HZJX.cardInfo",
+        "activeCard": "HZJX.activeCard"
     },
     "HZJX": {
         "user_get_card": "UserGetCard"
