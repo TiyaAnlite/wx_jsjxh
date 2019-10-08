@@ -15,6 +15,7 @@
     },
     "activeCard": {
         "session": "str",
+        "order_id": "int",
         "code": "str"
     }
 }

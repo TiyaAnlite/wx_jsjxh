@@ -86,15 +86,17 @@ class hzjx_common(Base):
 
         # 查询用户信息和授权情况
         linkid = self.sql.finder_single(fulltext_mode=[], table="wxCard", keyword_line=[
-                                        "openId"], keyword=[openid], line=["dataId"])[0]["dataId"]  # User Id
+                                        "openId"], keyword=[openid], line=["dataId"])  # User Id
         if not linkid:
             return {"code": 403, "message": "Unregisted user"}, 403
+        linkid = linkid[0]["dataId"]
 
         check = self.sql.finder_single(fulltext_mode=[], table=["wxMamger"], keyword_line=[
-                                       "cardTable"], keyword=[linkid], line=["dataId"])[0]["dataId"]
+                                       "cardTable"], keyword=[linkid], line=["dataId"])
 
         if not check:
             return {"code": 403, "message": "Permission denied"}, 403
+        check = check[0]["dataId"]
 
         # 生成会话密钥，并建立登录会话
         session = ""
@@ -109,10 +111,11 @@ class hzjx_common(Base):
     def loginCheck(self, session):
         '''登录态检查'''
         doUser = self.sql.finder_single(fulltext_mode=[], table="wxMamger", keyword_line=[
-                                        "session"], keyword=[session], line=["cardTable"])[0]["cardTable"]  # User Id
+                                        "session"], keyword=[session], line=["cardTable"])  # User Id
         if not doUser:
             raise CodeLabError({"code": 403, "message": "Permission denied"})
         else:
+            doUser = doUser[0]["cardTable"]
             return doUser
 
     def logAction(self, doUser, action):
@@ -122,12 +125,13 @@ class hzjx_common(Base):
                               doUser, action, nowtime], line=["cardTable", "Action", "timestamp"], value=[doUser, action, nowtime])  # Mark Log
         return
 
+
 class hzjx_card(hzjx_common):
     def decryptCode(self, encrypt_code):
         token = self.getToken()
-        params = dict(access_token=token)
         data = dict(encrypt_code=encrypt_code)
         while True:
+            params = dict(access_token=token)
             response = requests.post(
                 "https://api.weixin.qq.com/card/code/decrypt?", params=params, json=data)
             resdata = response.json()
@@ -156,11 +160,11 @@ class hzjx_card(hzjx_common):
         '''提交会员信息，并更新会员数据库，准备激活'''
         # 第一步：先拉取微信端填写的会员信息
         token = self.getToken()
-        params = dict(access_token=token)
         ticket_decoded = urllib.parse.unquote(
             post_data["activate_ticket"])  # URLdecode
         data = dict(activate_ticket=ticket_decoded)
         while True:
+            params = dict(access_token=token)
             response = requests.post(
                 "https://api.weixin.qq.com/card/membercard/activatetempinfo/get?", params=params, json=data)
             resdata = response.json()
@@ -195,9 +199,10 @@ class hzjx_card(hzjx_common):
 
         # 第三步：查找在库卡数据
         check = self.sql.finder_single(fulltext_mode=[], table="wxCard", line=["dataId"], keyword_line=[
-                                       "openId", "cardId", "cardCode"], keyword=[resdata["openid"], resdata["card_id"], code])[0]["dataId"]
+                                       "openId", "cardId", "cardCode"], keyword=[resdata["openid"], resdata["card_id"], code])
         if not check:
             raise CodeLabError("Func:updateMember:Cannot find user's card")
+        check = check[0]["dataId"]
 
         # 第四步：更新新会员信息
         self.sql.adder_single(fulltext_mode=[], table="wxUser", keyword_line=["cardTable"], keyword=[check["dataId"]], line=[
@@ -205,9 +210,51 @@ class hzjx_card(hzjx_common):
 
         return {"code": 200, "name": name, "sid": sid}, 200
 
-    def doActiveCard(self, code):
+    def doActiveCard(self, code, order_id=0):
         '''调用微信接口激活微信会员卡'''
-        pass
+        # 生成卡号
+        while True:
+            num = "A0{}0".format(order_id)
+            while len(num) < 12:
+                num += random.choice(string.digits)
+            # 查重
+            if not self.sql.finder_single(fulltext_mode=[], table="wxCard", keyword_line=["cardNum"], keyword=[num], line=["dataId"]):
+                break
+
+        # 读取学号头，确认有效期
+        sid = self.sql.multi_table_find(fulltext_mode=[], table=["wxCard", "wxUser"], bind_key=[
+                                        "dataId", "cardTable"], keyword_line=["cardCode"], keyword=[code], line=["sId"])[0]["sId"]
+        use_year = 4 - \
+            (int(time.strftime("%Y", time.localtime())) - int(str(sid)[:4]))
+        start_time = 1567267200
+        if use_year == 4:
+            end_time = 1694707200
+        if use_year == 3:
+            end_time = 1663171200
+        if use_year == 2:
+            end_time = 1631635200
+        if use_year == 1:
+            end_time = 1600099200
+
+        # 调用API激活
+        data = dict(membership_number=num, code=code,
+                    activate_begin_time=start_time, activate_end_time=end_time)
+        token = self.getToken()
+        while True:
+            params = dict(access_token=token)
+            response = requests.post(
+                "https://api.weixin.qq.com/card/membercard/activate?", params=params, json=data)
+            resdata = response.json()
+            if resdata["errcode"] == 40014:
+                token = self.getToken(force_update=True)
+            elif resdata["errcode"] == 0:
+                break
+            else:
+                raise CodeLabError(
+                    "Func:doActiveCard:Wechat return errorcode {}".format(resdata["errcode"]))
+        self.sql.adder_single(fulltext_mode=[], table="wxCard", keyword_line=[
+                              "cardCode"], keyword=[code], line=["isActive_wx"], value=[1])
+        return
 
 
 class hzjx_mamger(hzjx_card):
@@ -221,7 +268,7 @@ class hzjx_mamger(hzjx_card):
 
         infoData = self.sql.multi_table_find(fulltext_mode=[], table=["wxCard", "wxUser"], bind_key=["dataId", "cardTable"], keyword_line=[
                                              "cardCode_crypt"], keyword=[post_data["code"]], line=["timestamp_reg", "isActive", "isActive_wx", "name", "sId", "roomId", "phone", "department"])
-        self.logAction(doUser, "onInfo")
+        self.logAction(doUser, "onInfo_code")
         return infoData[0], 200
 
     def activeCard(self, post_data):
@@ -236,10 +283,12 @@ class hzjx_mamger(hzjx_card):
         self.sql.adder_single(fulltext_mode=[], table="wxCard", keyword_line=[
                               "cardCode"], keyword=code, line=["isActive"], value=[1])
         self.logAction(doUser, "onActive")
-        self.doActiveCard(code)
+        if "order_id" in post_data:
+            self.doActiveCard(code, post_data["order_id"])
+        else:
+            self.doActiveCard(code)
         self.logAction(doUser, "onActive_wx")
-        return {"code":200}, 200
-        
+        return {"code": 200}, 200
 
 
 class wx_hzjx(hzjx_mamger):
