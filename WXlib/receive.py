@@ -44,3 +44,4 @@ class EventMsg(object):
         self.CreateTime = xmlData.find('CreateTime').text
         self.MsgType = xmlData.find('MsgType').text
         self.Event = xmlData.find('Event').text
+        self.rawData = xmlData
