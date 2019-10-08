@@ -23,6 +23,7 @@ class Base(object):
         self.sql = mainSQL(self.sql_conf["host"], self.sql_conf["port"],
                            self.sql_conf["user"], self.sql_conf["password"],
                            self.sql_conf["db"], self.sql_conf["charset"])
+        self.xmlMsg = WXlib.reply.Msg()
 
 
 class hzjx_common(Base):
@@ -124,6 +125,9 @@ class hzjx_common(Base):
                               doUser, action, nowtime], line=["cardTable", "Action", "timestamp"], value=[doUser, action, nowtime])  # Mark Log
         return
 
+    def subscribe(self, wpost_data):
+        xmlImg = WXlib.reply.ImageMsg(wpost_data.toUserName, wpost_data.fromUserName, "tGN1fHUT1waZG-Nny6_AE9wd4Oft8JJ1k3dg4Xrz_TM")
+        return xmlImg.send(), 200
 
 class hzjx_card(hzjx_common):
     def decryptCode(self, encrypt_code):
@@ -307,10 +311,10 @@ class wx_hzjx(hzjx_mamger):
         return res, code
 
     def textEnter(self, wpost_data):
-        return "success", 200
+        return self.xmlMsg.send(), 200
 
     def imageEnter(self, wpost_data):
-        return "success", 200
+        return self.xmlMsg.send(), 200
 
 
 class CodeLabError(Exception):

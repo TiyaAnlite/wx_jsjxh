@@ -14,6 +14,7 @@
         "activeCard": "HZJX.activeCard"
     },
     "HZJX": {
-        "user_get_card": "UserGetCard"
+        "user_get_card": "UserGetCard",
+        "subscribe": "wpost_data"
     }
 }
