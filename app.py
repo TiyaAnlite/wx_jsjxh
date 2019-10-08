@@ -4,6 +4,7 @@ import gevent
 import json
 import os
 from flask import Flask, request, jsonify, redirect
+from flask_cors import CORS
 
 from WXlib import receive
 import handle
@@ -11,7 +12,8 @@ from handle import CodeLabError
 
 app = Flask(__name__)
 app_http = Flask(__name__)
-
+CORS(app, resources=r'/*')
+CORS(app_http, resources=r'/*')
 
 @app_http.before_request
 def https_route():
