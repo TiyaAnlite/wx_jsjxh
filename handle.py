@@ -13,8 +13,7 @@ from SQLlib import mainSQL
 
 
 class Base(object):
-    def __init__(self, resmod):
-        self.resmod = resmod
+    def __init__(self):
         self.sql_conf = json.load(
             open(os.path.join("config", "sql_conf.json"), "r"))
         self.wx_conf = json.load(
@@ -292,8 +291,8 @@ class hzjx_mamger(hzjx_card):
 
 
 class wx_hzjx(hzjx_mamger):
-    def __init__(self, resmod):
-        Base.__init__(resmod)
+    def __init__(self):
+        Base.__init__()
         self.funcRoute = self.funcRoute["HZJX"]
 
     def eventEnter(self, wpost_data):

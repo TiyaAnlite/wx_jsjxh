@@ -79,8 +79,7 @@ class router(object):
         return res, code
 
 
-HZJX = handle.wx_hzjx(
-    json.load(open(os.path.join("config", "resmod.json"), "r")))
+HZJX = handle.wx_hzjx()
 app_router = router(json.load(open(os.path.join("config", "route.json"), "r")))
 
 if __name__ == '__main__':
