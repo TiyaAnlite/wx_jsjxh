@@ -292,7 +292,7 @@ class hzjx_mamger(hzjx_card):
 
 class wx_hzjx(hzjx_mamger):
     def __init__(self):
-        Base.__init__()
+        Base.__init__(self)
         self.funcRoute = self.funcRoute["HZJX"]
 
     def eventEnter(self, wpost_data):
