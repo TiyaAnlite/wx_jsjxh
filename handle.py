@@ -121,8 +121,8 @@ class hzjx_common(Base):
     def logAction(self, doUser, action):
         '''记录用户操作日志'''
         nowtime = int(time.time())
-        self.sql.adder_single(fulltext_mode=[], table="wxLog", keyword_line=["cardTable", "Action", "timestamp"], keyword=[
-                              doUser, action, nowtime], line=["cardTable", "Action", "timestamp"], value=[doUser, action, nowtime])  # Mark Log
+        self.sql.adder_single(fulltext_mode=[], table="wxLog", keyword_line=["cardTable", "Action", "timestamp_check"], keyword=[
+                              doUser, action, nowtime], line=["cardTable", "Action", "timestamp_check"], value=[doUser, action, nowtime])  # Mark Log
         return
 
     def subscribe(self, wpost_data):
