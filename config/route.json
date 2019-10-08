@@ -15,6 +15,6 @@
     },
     "HZJX": {
         "user_get_card": "UserGetCard",
-        "subscribe": "wpost_data"
+        "subscribe": "subscribe"
     }
 }

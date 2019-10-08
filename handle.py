@@ -126,8 +126,10 @@ class hzjx_common(Base):
         return
 
     def subscribe(self, wpost_data):
-        xmlImg = reply.ImageMsg(wpost_data.toUserName, wpost_data.fromUserName, "tGN1fHUT1waZG-Nny6_AE9wd4Oft8JJ1k3dg4Xrz_TM")
+        xmlImg = reply.ImageMsg(wpost_data.FromUserName, wpost_data.ToUserName,
+                                "tGN1fHUT1waZG-Nny6_AE9wd4Oft8JJ1k3dg4Xrz_TM")
         return xmlImg.send(), 200
+
 
 class hzjx_card(hzjx_common):
     def decryptCode(self, encrypt_code):
@@ -302,8 +304,7 @@ class wx_hzjx(hzjx_mamger):
     def eventEnter(self, wpost_data):
         try:
             eval_string = "self." + \
-                self.funcRoute[wpost_data.rawData.find(
-                    'Event').text] + "(wpost_data)"
+                self.funcRoute[wpost_data.Event] + "(wpost_data)"
             res, code = eval(eval_string)
         except KeyError:
             res = "success"
