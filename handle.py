@@ -128,7 +128,6 @@ class hzjx_common(Base):
     def subscribe(self, wpost_data):
         xmlImg = reply.TextMsg(wpost_data.FromUserName, wpost_data.ToUserName,
                                 "欢迎来到计协的自留地！\nヾ(≧▽≦*)o")
-        print("Send")
         return xmlImg.send(), 200
 
 
