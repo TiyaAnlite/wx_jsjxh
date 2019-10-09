@@ -142,10 +142,14 @@ class hzjx_common(Base):
 
 
 class hzjx_msg(hzjx_common):
-    def modPush(self, model, openid):
+    def modPush(self, model, model_data, openid):
         '''推送模版消息'''
+        # 填入模版
         msg = self.msgmod[model]
         msg["touser"] = openid
+        for i in model_data:
+            msg[i]["value"] = model_data[i]
+
         token = self.getToken()
         while True:
             params = dict(access_token=token)
@@ -294,9 +298,10 @@ class hzjx_card(hzjx_msg):
                               "cardCode"], keyword=[code], line=["isActive_wx"], value=[1])
 
         # 发送激活信息
-        openid = self.sql.finder_single(fulltext_mode=[], table="wxCard", keyword_line=[
-                                        "cardCode"], keyword=[code], line=["openId"])[0]["openId"]
-        self.modPush("new_member", openid)
+        get_data = self.sql.multi_table_find(fulltext_mode=[], table=["wxCard", "wxUser"], bind_key=[
+                                              "dataId", "cardTable"], keyword_line=["cardCode"], keyword=[code], line=["openId", "name", "phone"])[0]
+        send_data = dict(keyword1=get_data["name"], keyword2=get_data["phone"], keyword3=num)
+        self.modPush("new_member", send_data, get_data["openId"])
         return
 
 
