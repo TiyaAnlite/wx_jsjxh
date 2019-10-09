@@ -166,6 +166,53 @@ class hzjx_msg(hzjx_common):
         return
 
 
+class hzjx_func(hzjx_msg):
+    def faceCheckIn(self, post_data):
+        '''面试签到功能'''
+        # 登录并获得授权用户openid
+        params = dict(appid=self.wx_conf["appid"], secret=self.wx_conf["secret"],
+                      code=post_data["code"], grant_type="authorization_code")
+        response = requests.post(
+            "https://api.weixin.qq.com/sns/oauth2/access_token?", params=params)
+        resdata = response.json()
+        if "openid" in resdata:
+            openid = resdata["openid"]
+        else:
+            raise CodeLabError(
+                "Func:login:Wechat return errorcode {}".format(resdata["errcode"]))
+
+        # 签入
+        uid = self.sql.finder_single(fulltext_mode=[], table="wxCard", keyword_line=[
+                                     "openId"], keyword=[openid], line=["dataId"])
+        if uid:
+            uid = uid[0]["dataId"]
+        else:
+            return {"code": -2}, 400  # 未领卡
+        name = self.sql.finder_single(fulltext_mode=[], table="wxUser", keyword_line=[
+            "cardTable"], keyword=[uid], line=["name"])
+        if name:
+            name = name[0]["name"]
+        else:
+            return {"code": -1}, 400  # 未填信息
+        self.sql.adder_single(fulltext_mode=[], table="wxCheck", keyword_line=["cardTable"], keyword=[
+                              uid], line=["cardTable", "checkIn", "checkOut"], value=[uid, 1, 0])
+
+        # 推送信息
+        queue_num = self.sql.finder_single(fulltext_mode=[], table="wxCheck", keyword_line=[
+                                           "cardTable"], keyword=[uid], line=["dataId"])[0]["dataId"]  # 序号
+        people = self.sql.finder_single(fulltext_mode=[], table="wxCheck", keyword_line=[
+            "checkIn", "checkOut"], keyword=[1, 0], line=["dataId"])  # 前方人数
+        if people:
+            people = len(people)
+        else:
+            people = 0
+        req_data = dict(keyword1=name, keyword2=time.strftime(
+            "%Y-%m-%d %H:%M", time.localtime()), remark="你的序号是第{}号，预计前方还有{}人".format(queue_num, people))
+        self.modPush(model="check_in", model_data=req_data, openid=openid)
+
+        return {"code": 200}, 200
+
+
 class hzjx_card(hzjx_msg):
     def decryptCode(self, encrypt_code):
         token = self.getToken()
@@ -299,9 +346,11 @@ class hzjx_card(hzjx_msg):
 
         # 发送激活信息
         get_data = self.sql.multi_table_find(fulltext_mode=[], table=["wxCard", "wxUser"], bind_key=[
-                                              "dataId", "cardTable"], keyword_line=["cardCode"], keyword=[code], line=["openId", "name", "phone"])[0]
-        send_data = dict(keyword1=get_data["name"], keyword2=get_data["phone"], keyword3=num)
-        self.modPush("new_member", send_data, get_data["openId"])
+            "dataId", "cardTable"], keyword_line=["cardCode"], keyword=[code], line=["openId", "name", "phone"])[0]
+        send_data = dict(
+            keyword1=get_data["name"], keyword2=get_data["phone"], keyword3=num)
+        self.modPush(model="new_member", model_data=send_data,
+                     openid=get_data["openId"])
         return
 
 
@@ -336,6 +385,29 @@ class hzjx_mamger(hzjx_card):
         else:
             self.doActiveCard(code)
         self.logAction(doUser, "onActive_wx")
+        return {"code": 200}, 200
+
+    def getFaceList(self, post_data):
+        '''签到组件查询功能'''
+        try:
+            self.loginCheck(post_data["session"])
+        except CodeLabError as err:
+            return err.message, 403
+
+        resdata = self.sql.multi_table_find(fulltext_mode=[], table=["wxCheck", "wxUser"], bind_key=["cardTable", "cardTable"], keyword_line=[
+                                            "checkIn", "checkOut"], keyword=[1, 0], line=["wxCheck.dataId", "name", "department"])
+        return resdata, 200
+
+    def faceCheckOut(self, post_data):
+        '''签出功能'''
+        try:
+            doUser = self.loginCheck(post_data["session"])
+        except CodeLabError as err:
+            return err.message, 403
+
+        self.sql.adder_single(fulltext_mode=[], table="wxCheck", keyword_line=["dataId"], keyword=[
+                              post_data["checkid"]], line=["checkIn", "checkOut"], value=[1, 1])
+        self.logAction(doUser, "faceCheckOut")
         return {"code": 200}, 200
 
 

@@ -17,5 +17,15 @@
         "session": "str",
         "order_id": "int",
         "code": "str"
+    },
+    "faceCheckIn":{
+        "code":"int"
+    },
+    "faceCheckOut":{
+        "session":"str",
+        "checkid":"int"
+    },
+    "getFaceList":{
+        "session": "str"
     }
 }

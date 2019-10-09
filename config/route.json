@@ -12,7 +12,10 @@
         "login": "HZJX.login",
         "cardInfo": "HZJX.cardInfo",
         "activeCard": "HZJX.activeCard",
-        "update": "HZJX.doGetToken"
+        "update": "HZJX.doGetToken",
+        "faceCheckIn": "HZJX.faceCheckIn",
+        "faceCheckOut": "HZJX.faceCheckOut",
+        "getFaceList": "HZJX.getFaceList"
     },
     "HZJX": {
         "user_get_card": "UserGetCard",
