@@ -148,7 +148,7 @@ class hzjx_msg(hzjx_common):
         msg = self.msgmod[model]
         msg["touser"] = openid
         for i in model_data:
-            msg[i]["value"] = model_data[i]
+            msg["data"][i]["value"] = model_data[i]
 
         token = self.getToken()
         while True:
