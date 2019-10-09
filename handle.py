@@ -20,6 +20,8 @@ class Base(object):
             open(os.path.join("config", "jsjxh.json"), "r"))
         self.funcRoute = json.load(
             open(os.path.join("config", "route.json"), "r"))
+        self.msgmod = json.load(
+            open(os.path.join("config", "msgMod.json"), "r"))
         self.sql = mainSQL(self.sql_conf["host"], self.sql_conf["port"],
                            self.sql_conf["user"], self.sql_conf["password"],
                            self.sql_conf["db"], self.sql_conf["charset"])
@@ -136,10 +138,31 @@ class hzjx_common(Base):
         doUser = self.loginCheck(post_data["session"])
         self.getToken(force_update=True)
         self.logAction(doUser, "updateSession")
-        return {"code":200}, 200
+        return {"code": 200}, 200
 
 
-class hzjx_card(hzjx_common):
+class hzjx_msg(hzjx_common):
+    def modPush(self, model, openid):
+        '''推送模版消息'''
+        msg = self.msgmod[model]
+        msg["touser"] = openid
+        token = self.getToken()
+        while True:
+            params = dict(access_token=token)
+            response = requests.post(
+                "https://api.weixin.qq.com/cgi-bin/message/template/send?", params=params, json=msg)
+            resdata = response.json()
+            if resdata["errcode"] == 40014:
+                token = self.getToken(force_update=True)
+            elif resdata["errcode"] == 0:
+                break
+            else:
+                raise CodeLabError(
+                    "Func:modPush:Wechat return errorcode {}".format(resdata["errcode"]))
+        return
+
+
+class hzjx_card(hzjx_msg):
     def decryptCode(self, encrypt_code):
         token = self.getToken()
         data = dict(encrypt_code=encrypt_code)
@@ -269,6 +292,11 @@ class hzjx_card(hzjx_common):
                     "Func:doActiveCard:Wechat return errorcode {}".format(resdata["errcode"]))
         self.sql.adder_single(fulltext_mode=[], table="wxCard", keyword_line=[
                               "cardCode"], keyword=[code], line=["isActive_wx"], value=[1])
+
+        # 发送激活信息
+        openid = self.sql.finder_single(fulltext_mode=[], table="wxCard", keyword_line=[
+                                        "cardCode"], keyword=[code], line=["openId"])[0]["openId"]
+        self.modPush("new_member", openid)
         return
 
 
