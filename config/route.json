@@ -11,7 +11,8 @@
         "updateMember": "HZJX.updateMember",
         "login": "HZJX.login",
         "cardInfo": "HZJX.cardInfo",
-        "activeCard": "HZJX.activeCard"
+        "activeCard": "HZJX.activeCard",
+        "update": "HZJX.doGetToken"
     },
     "HZJX": {
         "user_get_card": "UserGetCard",
