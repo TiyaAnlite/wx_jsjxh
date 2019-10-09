@@ -132,6 +132,12 @@ class hzjx_common(Base):
                                "欢迎来到计协的自留地！\nヾ(≧▽≦*)o")
         return xmlImg.send(), 200
 
+    def doGetToken(self, post_data):
+        doUser = self.loginCheck(post_data["session"])
+        self.getToken(force_update=True)
+        self.logAction(doUser, "updateSession")
+        return {"code":200}, 200
+
 
 class hzjx_card(hzjx_common):
     def decryptCode(self, encrypt_code):
