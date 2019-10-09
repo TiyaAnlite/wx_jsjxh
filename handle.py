@@ -129,7 +129,7 @@ class hzjx_common(Base):
     def subscribe(self, wpost_data):
         '''关注自动回复消息'''
         xmlImg = reply.TextMsg(wpost_data.FromUserName, wpost_data.ToUserName,
-                                "欢迎来到计协的自留地！\nヾ(≧▽≦*)o")
+                               "欢迎来到计协的自留地！\nヾ(≧▽≦*)o")
         return xmlImg.send(), 200
 
 
@@ -227,6 +227,8 @@ class hzjx_card(hzjx_common):
             # 查重
             if not self.sql.finder_single(fulltext_mode=[], table="wxCard", keyword_line=["cardNum"], keyword=[num], line=["dataId"]):
                 break
+        self.sql.adder_single(fulltext_mode=[], table="wxCard", keyword_line=[
+                              "cardCode"], keyword=[code], line=["cardNum"], value=[num])
 
         # 读取学号头，确认有效期
         sid = self.sql.multi_table_find(fulltext_mode=[], table=["wxCard", "wxUser"], bind_key=[
