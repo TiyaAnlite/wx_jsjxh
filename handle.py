@@ -60,9 +60,10 @@ class hzjx_common(Base):
                 "https://api.weixin.qq.com/cgi-bin/token?", params=params)
             nowtime = int(time.time())
             resdata = response.json()
-            if not resdata["errcode"] == 0:
-                raise CodeLabError(
-                    "Func:getToken:Wechat return errorcode {}".format(resdata["errcode"]))
+            if "errcode" in resdata:
+                if not resdata["errcode"] == 0:
+                    raise CodeLabError(
+                        "Func:getToken:Wechat return errorcode {}".format(resdata["errcode"]))
             new_token = resdata["access_token"]
             use_time = resdata["expires_in"]
             timeout = nowtime + use_time
@@ -91,7 +92,7 @@ class hzjx_common(Base):
             return {"code": 403, "message": "Unregisted user"}, 403
         linkid = linkid[0]["dataId"]
 
-        check = self.sql.finder_single(fulltext_mode=[], table=["wxMamger"], keyword_line=[
+        check = self.sql.finder_single(fulltext_mode=[], table="wxMamger", keyword_line=[
                                        "cardTable"], keyword=[linkid], line=["dataId"])
 
         if not check:
@@ -106,7 +107,7 @@ class hzjx_common(Base):
         self.sql.adder_single(fulltext_mode=[], table="wxMamger", keyword_line=[
                               "dataId"], keyword=[check], line=["session"], value=[session])
         self.logAction(linkid, "onLogin")
-        return {"code": 200, "session": session}
+        return {"code": 200, "session": session}, 200
 
     def loginCheck(self, session):
         '''登录态检查'''
@@ -126,6 +127,7 @@ class hzjx_common(Base):
         return
 
     def subscribe(self, wpost_data):
+        '''关注自动回复消息'''
         xmlImg = reply.TextMsg(wpost_data.FromUserName, wpost_data.ToUserName,
                                 "欢迎来到计协的自留地！\nヾ(≧▽≦*)o")
         return xmlImg.send(), 200
@@ -199,19 +201,19 @@ class hzjx_card(hzjx_common):
 
         # 第二步：解码加密code
         code_decoded = urllib.parse.unquote(
-            resdata["encrypt_code"])  # URLdecode
+            post_data["encrypt_code"])  # URLdecode
         code = self.decryptCode(code_decoded)
 
         # 第三步：查找在库卡数据
         check = self.sql.finder_single(fulltext_mode=[], table="wxCard", line=["dataId"], keyword_line=[
-                                       "openId", "cardId", "cardCode"], keyword=[resdata["openid"], resdata["card_id"], code])
+                                       "openId", "cardId", "cardCode"], keyword=[post_data["openid"], post_data["card_id"], code])
         if not check:
             raise CodeLabError("Func:updateMember:Cannot find user's card")
         check = check[0]["dataId"]
 
         # 第四步：更新新会员信息
-        self.sql.adder_single(fulltext_mode=[], table="wxUser", keyword_line=["cardTable"], keyword=[check["dataId"]], line=[
-                              "cardTable", "name", "sId", "roomId", "phone", "department"], value=[check["dataId"], name, sid, int(roomfloor + room), phone, department])
+        self.sql.adder_single(fulltext_mode=[], table="wxUser", keyword_line=["cardTable"], keyword=[check], line=[
+                              "cardTable", "name", "sId", "roomId", "phone", "department"], value=[check, name, sid, int(roomfloor + room), phone, department])
 
         return {"code": 200, "name": name, "sid": sid}, 200
 
@@ -283,10 +285,10 @@ class hzjx_mamger(hzjx_card):
         except CodeLabError as err:
             return err.message, 403
 
-        code = self.sql.finder_single(fulltext_mode=[], table="wxCard", keyword_line="cardCode_crypt", keyword=[
+        code = self.sql.finder_single(fulltext_mode=[], table="wxCard", keyword_line=["cardCode_crypt"], keyword=[
                                       post_data["code"]], line=["cardCode"])[0]["cardCode"]
         self.sql.adder_single(fulltext_mode=[], table="wxCard", keyword_line=[
-                              "cardCode"], keyword=code, line=["isActive"], value=[1])
+                              "cardCode"], keyword=[code], line=["isActive"], value=[1])
         self.logAction(doUser, "onActive")
         if "order_id" in post_data:
             self.doActiveCard(code, post_data["order_id"])

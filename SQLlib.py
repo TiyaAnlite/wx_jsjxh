@@ -160,8 +160,12 @@ class mainSQL(object):
         queue_line += ")"
         # 需要额外进行拼接防止line列变为单字符串而导致引号问题
 
+        if len(value) == 1:
+            val = "('{}')".format(tuple(value)[0])  # 此处为了修复仅有单个元素转换时残留一个逗号问题
+        else:
+            val = tuple(value)
         sql_sent += "INSERT INTO {table_name} {field} VALUES {value}".format(
-            table_name=table, field=queue_line, value=str(tuple(value)))
+            table_name=table, field=queue_line, value=str(val))
         return sql_sent
 
     def _up_part(self, sql_sent, line, value, table):
