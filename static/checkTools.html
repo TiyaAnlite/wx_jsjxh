@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>面试助手</title>
+    <script src="https://ajax.aspnetcdn.com/ajax/jQuery/jquery-1.11.1.js"></script>
+
+</head>
+
+<body>
+    <script>
+        function getFaceList() {
+            queue = document.getElementById("num").value;
+            if (queue == "") { queue = 0 }
+            data = {
+                session: "DvkczyvVONGYu6dCq5FwDEP2ovQ53LUjZWVeYbhZivQGLQGAqg06WjJtWE7SBRu1NTRBxVwnA7NHsBwGNMjkCruiQDQvPlzI2tR23wtI3vXpRbz3DV5Zo4ugePpmQEn0",
+                checkid: queue
+            }
+            data = JSON.stringify(data)
+            $.ajax(
+                {
+                    url: "../wx_api/getFaceInfo",
+                    type: "post",
+                    dataType: "json",
+                    contentType: "application/json",
+                    data: data,
+                    success: function (data) {
+                        text = ""
+                        for (i = 0; i < data.length; i++) {
+                            text += "序号: " + data[i].dataId + "   姓名: " + data[i].name + "  志愿部门: " + data[i].department + "\n"
+                        }
+                        alert(text)
+                    }
+                }
+            )
+        }
+        function checkOut() {
+            queue = document.getElementById("num").value;
+            if (queue == "") { queue = 0 }
+            data = {
+                session: "DvkczyvVONGYu6dCq5FwDEP2ovQ53LUjZWVeYbhZivQGLQGAqg06WjJtWE7SBRu1NTRBxVwnA7NHsBwGNMjkCruiQDQvPlzI2tR23wtI3vXpRbz3DV5Zo4ugePpmQEn0",
+                checkid: queue
+            }
+            data = JSON.stringify(data)
+            $.ajax(
+                {
+                    url: "../wx_api/faceCheckOut",
+                    type: "post",
+                    dataType: "json",
+                    contentType: "application/json",
+                    data: data,
+                    success: function (data) {
+                        alert("签出完成")
+                    }
+                }
+            )
+        }
+    </script>
+    <input type="text" value="" maxlength="100" id="num" name="num" /><br>
+    <button onclick="getFaceList()">查询</button><br>
+    <button onclick="checkOut()">签出</button>
+</body>
+
+</html>

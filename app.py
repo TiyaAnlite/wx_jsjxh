@@ -61,6 +61,18 @@ def codelabApi(app_path):
             print(i, "\n")
         return "", 200
 
+@app.route('/faceCheckIn')
+def faceCheckIn():
+    return app.send_static_file('checkin.html')
+
+@app.route('/faceCheckIn/MP_verify_BFxk9aicA2tZgujI.txt')
+def wxCheck():
+    return app.send_static_file('wxCheck.txt')
+
+@app.route('/static/<path:app_path>')
+def staticRoute(app_path):
+    return app.send_static_file(app_path)
+
 
 class router(object):
     def __init__(self, route_list):

@@ -21,7 +21,7 @@ class Base(object):
         self.funcRoute = json.load(
             open(os.path.join("config", "route.json"), "r"))
         self.msgmod = json.load(
-            open(os.path.join("config", "msgMod.json"), "r"))
+            open(os.path.join("config", "msgMod.json"), "r", encoding='utf-8'))
         self.sql = mainSQL(self.sql_conf["host"], self.sql_conf["port"],
                            self.sql_conf["user"], self.sql_conf["password"],
                            self.sql_conf["db"], self.sql_conf["charset"])
@@ -410,8 +410,23 @@ class hzjx_mamger(hzjx_card):
         self.logAction(doUser, "faceCheckOut")
         return {"code": 200}, 200
 
+    def getFaceInfo(self, post_data):
+        '''查询面试信息'''
+        try:
+            self.loginCheck(post_data["session"])
+        except CodeLabError as err:
+            return err.message, 403
 
-class wx_hzjx(hzjx_mamger):
+        if post_data["checkid"] == 0:
+            resdata = self.sql.multi_table_find(fulltext_mode=[], table=["wxCheck", "wxUser"], bind_key=["cardTable", "cardTable"], keyword_line=[
+                                                "checkIn", "checkOut"], keyword=[1, 0], line=["wxCheck.dataId", "name", "department"])
+        else:
+            resdata = self.sql.multi_table_find(fulltext_mode=[], table=["wxCheck", "wxUser"], bind_key=["cardTable", "cardTable"], keyword_line=[
+                                                "wxCheck.dataId", "checkIn", "checkOut"], keyword=[post_data["checkid"], 1, 0], line=["wxCheck.dataId", "name", "department"])
+        return resdata, 200
+
+
+class wx_hzjx(hzjx_func, hzjx_mamger):
     def __init__(self):
         Base.__init__(self)
         self.funcRoute = self.funcRoute["HZJX"]

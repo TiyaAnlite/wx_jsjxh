@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>面试签到</title>
+    <script src="https://ajax.aspnetcdn.com/ajax/jQuery/jquery-1.11.1.js">
+    </script>
+    <script src="http://res.wx.qq.com/open/js/jweixin-1.4.0.js"></script>
+    <script>
+        function getPar(par) {
+            //获取当前URL
+            var local_url = document.location.href;
+            //获取要取得的get参数位置
+            var get = local_url.indexOf(par + "=");
+            if (get == -1) {
+                return "";
+            }
+            //截取字符串
+            var get_par = local_url.slice(par.length + get + 1);
+            //判断截取后的字符串是否还有其他get参数
+            var nextPar = get_par.indexOf("&");
+            if (nextPar != -1) {
+                get_par = get_par.slice(0, nextPar);
+            }
+            return get_par;
+        }
+
+        var data = {
+            code: getPar("code")
+        }
+        data = JSON.stringify(data)
+        $(document).ready(function () {
+            $.ajax(
+                {
+                    url: "../wx_api/faceCheckIn",
+                    type: "post",
+                    dataType: "json",
+                    contentType: "application/json",
+                    data: data,
+                    success: function (data) {
+                        alert("签到成功");
+                        wx.closeWindow();
+                    },
+                    error: function (data) {
+                        alert(JSON.parse(data.responseText).message)
+                    }
+                }
+            );
+        });
+        function test(){
+            alert(getPar("code"))
+        }
+    </script>
+</head>
+
+<body>
+    "正在提交签到，请不要关闭此页面....."
+</body>
+
+</html>

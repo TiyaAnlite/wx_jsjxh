@@ -18,14 +18,18 @@
         "order_id": "int",
         "code": "str"
     },
-    "faceCheckIn":{
-        "code":"int"
+    "faceCheckIn": {
+        "code": "int"
     },
-    "faceCheckOut":{
-        "session":"str",
-        "checkid":"int"
+    "faceCheckOut": {
+        "session": "str",
+        "checkid": "int"
     },
-    "getFaceList":{
+    "getFaceList": {
         "session": "str"
+    },
+    "getFaceInfo": {
+        "session": "str",
+        "checkid": "int"
     }
 }

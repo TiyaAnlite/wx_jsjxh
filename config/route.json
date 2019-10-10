@@ -15,7 +15,8 @@
         "update": "HZJX.doGetToken",
         "faceCheckIn": "HZJX.faceCheckIn",
         "faceCheckOut": "HZJX.faceCheckOut",
-        "getFaceList": "HZJX.getFaceList"
+        "getFaceList": "HZJX.getFaceList",
+        "getFaceInfo": "HZJX.getFaceInfo"
     },
     "HZJX": {
         "user_get_card": "UserGetCard",
