@@ -20,6 +20,10 @@
     },
     "HZJX": {
         "user_get_card": "UserGetCard",
-        "subscribe": "subscribe"
+        "subscribe": "subscribe",
+        "scancode_waitmsg": "scanPush"
+    },
+    "ScanPush":{
+        "FaceCheckIn": "faceCheckIn_scan"
     }
 }

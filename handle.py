@@ -121,6 +121,23 @@ class hzjx_common(Base):
             doUser = doUser[0]["cardTable"]
             return doUser
 
+    def loginCheck_openid(self, openid):
+        '''登录态检查(仅openid检查)
+        返回的元组包含运行结果和数据'''
+        doUser = self.sql.finder_single(fulltext_mode=[], table="wxCard", keyword_line=[
+                                        "openId"], keyword=[openid], line=["dataId"])  # User Id
+        if not doUser:
+            return -1, False
+        doUser = doUser[0]["dataId"]
+
+        check = self.sql.finder_single(fulltext_mode=[], table="wxMamger", keyword_line=[
+                                       "cardTable"], keyword=[doUser], line=["dataId"])
+
+        if not check:
+            return -2, False
+        else:
+            return 0, doUser
+
     def logAction(self, doUser, action):
         '''记录用户操作日志'''
         nowtime = int(time.time())
@@ -167,19 +184,23 @@ class hzjx_msg(hzjx_common):
 
 
 class hzjx_func(hzjx_msg):
-    def faceCheckIn(self, post_data):
-        '''面试签到功能'''
-        # 登录并获得授权用户openid
-        params = dict(appid=self.wx_conf["appid"], secret=self.wx_conf["secret"],
-                      code=post_data["code"], grant_type="authorization_code")
-        response = requests.post(
-            "https://api.weixin.qq.com/sns/oauth2/access_token?", params=params)
-        resdata = response.json()
-        if "openid" in resdata:
-            openid = resdata["openid"]
-        else:
-            raise CodeLabError(
-                "Func:login:Wechat return errorcode {}".format(resdata["errcode"]))
+    def faceCheckIn(self, post_data, inputType="code"):
+        '''面试签到功能，兼容CardNumber直签'''
+        # 登录并获得授权用户openid(默认模式)
+        if inputType == "code":
+            params = dict(appid=self.wx_conf["appid"], secret=self.wx_conf["secret"],
+                          code=post_data["code"], grant_type="authorization_code")
+            response = requests.post(
+                "https://api.weixin.qq.com/sns/oauth2/access_token?", params=params)
+            resdata = response.json()
+            if "openid" in resdata:
+                openid = resdata["openid"]
+            else:
+                raise CodeLabError(
+                    "Func:login:Wechat return errorcode {}".format(resdata["errcode"]))
+        elif inputType == "CardNumber":
+            openid = self.sql.finder_single(fulltext_mode=[], table="wxCard", keyword_line=[
+                                            "cardNum"], keyword=[post_data["CardNumber"]], line=["openId"])
 
         # 签入
         uid = self.sql.finder_single(fulltext_mode=[], table="wxCard", keyword_line=[
@@ -210,7 +231,34 @@ class hzjx_func(hzjx_msg):
             "%Y-%m-%d %H:%M", time.localtime()), remark="你的序号是第{}号，预计前方还有{}人".format(queue_num, people))
         self.modPush(model="check_in", model_data=req_data, openid=openid)
 
-        return {"code": 200}, 200
+        # 兼容接口回传数据
+        if inputType == "CardNumber":
+            return dict(queue_num=queue_num, Name=name)
+        else:
+            return {"code": 200}, 200
+
+    def faceCheckIn_scan(self, scanData):
+        '''签到功能-扫码推兼容接口'''
+        # 权限检查
+        status, doUser = self.loginCheck_openid(scanData["FromUserName"])
+        if not status == 0:
+            if status == -1:
+                res = reply.TextMsg(
+                    scanData["FromUserName"], scanData["ToUserName"], content="该账户还未领取会员卡")
+            if status == -2:
+                res = reply.TextMsg(
+                    scanData["FromUserName"], scanData["ToUserName"], content="该账户没有操作权限")
+            return res.send(), 200
+
+        # 接口兼容转换
+        reqData = dict(CardNumber=scanData["ScanResult"])
+        callback = self.faceCheckIn(reqData, inputType="CardNumber")
+        content = "[签到操作完成]\n序号：{queue_num}\n姓名：{Name}"
+        res = reply.TextMsg(
+            scanData["FromUserName"], scanData["ToUserName"], content=content.format(**callback))
+        
+        self.logAction(doUser, "faceCheckIn_scan")
+        return res.send(), 200
 
 
 class hzjx_card(hzjx_msg):
@@ -430,8 +478,10 @@ class wx_hzjx(hzjx_func, hzjx_mamger):
     def __init__(self):
         Base.__init__(self)
         self.funcRoute = self.funcRoute["HZJX"]
+        self.scanRoute = self.funcRoute["ScanPush"]
 
     def eventEnter(self, wpost_data):
+        '''二级微信事件路由'''
         try:
             eval_string = "self." + \
                 self.funcRoute[wpost_data.Event] + "(wpost_data)"
@@ -446,6 +496,21 @@ class wx_hzjx(hzjx_func, hzjx_mamger):
 
     def imageEnter(self, wpost_data):
         return self.xmlMsg.send(), 200
+
+    def scanPush(self, wpost_data):
+        '''扫码推事件细分路由'''
+        try:
+            scanData = dict(FromUserName=wpost_data.FromUserName)
+            scanData["ToUserName"] = wpost_data.ToUserName
+            scanData["ScanResult"] = wpost_data.rawData.find('ScanResult').text
+            EventKey = wpost_data.rawData.find('EventKey').text
+            eval_string = "self." + \
+                self.scanRoute[EventKey] + "(scanData)"
+            res, code = eval(eval_string)
+        except KeyError:
+            res = "success"
+            code = 200
+        return res, code
 
 
 class CodeLabError(Exception):
