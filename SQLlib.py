@@ -130,6 +130,8 @@ class mainSQL(object):
         except:
             return False
 
+    # 以上为旧版功能实现函数
+
     def _sel_part(self, sql_sent, line, table):
         '''分离构造：SELECT FROM 部分，多结果
         内置WHERE，因此必须拼接条件'''
@@ -146,6 +148,12 @@ class mainSQL(object):
         for x in line_queue:
             sql_sent += x
         sql_sent += " FROM {} WHERE ".format(table)
+        return sql_sent
+
+    def _del_part(self, sql_sent, table):
+        '''分离构造：DELETE FROM 部分
+        内置WHERE'''
+        sql_sent += "DELETE FROM {} WHERE ".format(table)
         return sql_sent
 
     def _ins_part(self, sql_sent, line, value, table):
@@ -400,4 +408,34 @@ class mainSQL(object):
             return operation
         except:
             self.db.rollback()
+            return False
+
+    def delete_single(self, fulltext_mode, table, keyword_line, keyword, compare_mode=[]):
+        '''
+        删除器
+        支持多关键字，关键行
+        table：查询的表
+        【以下变量均使用列表元素】
+        fulltext模式：True(精确匹配) False(模糊搜索)
+        compare模式：>,<,=(仅有=时模糊搜索生效，未指定时为默认值=)
+        keyword_line：需要匹配的列
+        keyword：需要匹配的关键字
+        无输出数据库内容
+        【根据执行情况输出True和False】
+        '''
+
+        sql = ""
+        sql = self._del_part(sql, table)
+        sql = self._where_part(
+            sql, fulltext_mode, keyword_line, keyword, compare_mode)
+
+        self._link_checkout()
+        cursor = self.db.cursor(pymysql.cursors.DictCursor)
+        try:
+            cursor.execute(sql)
+            cursor.fetchall()
+            self.db.commit()
+            cursor.close()
+            return True
+        except:
             return False

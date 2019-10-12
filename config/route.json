@@ -22,9 +22,14 @@
     "HZJX": {
         "user_get_card": "UserGetCard",
         "subscribe": "subscribe",
+        "CLICK": "clickEvent",
         "scancode_waitmsg": "scanPush",
-        "ScanPush":{
+        "scancode_push": "scanPush",
+        "ScanPush": {
             "FaceCheckIn": "faceCheckIn_scan"
+        },
+        "ClickEvent": {
+            "GetCard": "sendCardMsg"
         }
     }
 }

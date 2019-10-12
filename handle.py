@@ -200,7 +200,7 @@ class hzjx_func(hzjx_msg):
                     "Func:login:Wechat return errorcode {}".format(resdata["errcode"]))
         elif inputType == "CardNumber":
             openid = self.sql.finder_single(fulltext_mode=[], table="wxCard", keyword_line=[
-                                            "cardNum"], keyword=[post_data["CardNumber"]], line=["openId"])
+                                            "cardNum"], keyword=[post_data["CardNumber"]], line=["openId"])[0]["openId"]
 
         # 签入
         uid = self.sql.finder_single(fulltext_mode=[], table="wxCard", keyword_line=[
@@ -281,6 +281,25 @@ class hzjx_card(hzjx_msg):
         self.sql.adder_single(fulltext_mode=[True], table="wxCard", line=[
                               "cardCode_crypt"], value=[encrypt_code], keyword_line=["cardCode"], keyword=[code])
         return code
+
+    def sendCardMsg(self, wpost_data):
+        '''触发客服消息为用户发卡'''
+        openid = wpost_data.FromUserName
+        token = self.getToken()
+        data = dict(touser=openid, msgtype="wxcard", wxcard=dict(card_id="pYABYsxX1J9OO7dlcPocD35EW7T4"))
+        while True:
+            params = dict(access_token=token)
+            response = requests.post(
+                "https://api.weixin.qq.com/cgi-bin/message/custom/send?", params=params, json=data)
+            resdata = response.json()
+            if resdata["errcode"] == 40014:
+                token = self.getToken(force_update=True)
+            elif resdata["errcode"] == 0:
+                break
+            else:
+                raise CodeLabError(
+                    "Func:sendCardMsg:Wechat return errorcode {}".format(resdata["errcode"]))
+        return self.xmlMsg.send(), 200
 
     def UserGetCard(self, wpost_data):
         openid = wpost_data.FromUserName
@@ -402,6 +421,7 @@ class hzjx_card(hzjx_msg):
         return
 
     def WXupdateMember(self, wget_data):
+        '''会员信息更新GET兼容接口'''
         pass
 
 class hzjx_mamger(hzjx_card):
@@ -481,6 +501,7 @@ class wx_hzjx(hzjx_func, hzjx_mamger):
         Base.__init__(self)
         self.funcRoute = self.funcRoute["HZJX"]
         self.scanRoute = self.funcRoute["ScanPush"]
+        self.clickRoute = self.funcRoute["ClickEvent"]
 
     def eventEnter(self, wpost_data):
         '''二级微信事件路由'''
@@ -504,7 +525,7 @@ class wx_hzjx(hzjx_func, hzjx_mamger):
         try:
             scanData = dict(FromUserName=wpost_data.FromUserName)
             scanData["ToUserName"] = wpost_data.ToUserName
-            scanData["ScanResult"] = wpost_data.rawData.find('ScanResult').text
+            scanData["ScanResult"] = wpost_data.rawData.find('ScanCodeInfo').find('ScanResult').text
             EventKey = wpost_data.rawData.find('EventKey').text
             eval_string = "self." + \
                 self.scanRoute[EventKey] + "(scanData)"
@@ -514,6 +535,17 @@ class wx_hzjx(hzjx_func, hzjx_mamger):
             code = 200
         return res, code
 
+    def clickEvent(self, wpost_data):
+        '''点击事件细分路由'''
+        try:
+            EventKey = wpost_data.rawData.find('EventKey').text
+            eval_string = "self." + \
+                self.clickRoute[EventKey] + "(wpost_data)"
+            res, code = eval(eval_string)
+        except KeyError:
+            res = "success"
+            code = 200
+        return res, code
 
 class CodeLabError(Exception):
     '''自定义异常类
