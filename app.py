@@ -15,6 +15,7 @@ app_http = Flask(__name__)
 CORS(app, resources=r'/*')
 CORS(app_http, resources=r'/*')
 
+
 @app_http.before_request
 def https_route():
     if request.url.startswith('http://'):
@@ -48,26 +49,28 @@ def wechat_socket():
         return res, code
 
 
-@app.route('/wx_api/<path:app_path>', methods=['POST'])
+@app.route('/wx_api/<path:app_path>', methods=['POST', 'GET'])
 def codelabApi(app_path):
     if request.method == 'POST':
-        post_data = request.get_json()
-        res, code = app_router.route(
-            target="api", path=app_path, data=post_data)
-        return jsonify(res), code
+        data = request.get_json()
     if request.method == 'GET':
-        get_data = request.args.listvalues()
-        for i in get_data:
-            print(i, "\n")
-        return "", 200
+        data = dict(request.args)
+        for k in data:
+            data[k] = data[k][0]
+    res, code = app_router.route(
+        target="api", path=app_path, data=data)
+    return jsonify(res), code
+
 
 @app.route('/faceCheckIn')
 def faceCheckIn():
     return app.send_static_file('checkin.html')
 
+
 @app.route('/faceCheckIn/MP_verify_BFxk9aicA2tZgujI.txt')
 def wxCheck():
     return app.send_static_file('wxCheck.txt')
+
 
 @app.route('/static/<path:app_path>')
 def staticRoute(app_path):
@@ -82,12 +85,12 @@ class router(object):
         try:
             eval_string = self.route_list[target][path] + "(data)"
         except KeyError:
-            res = {"code":404}
+            res = {"code": 404}
             code = 404
         try:
             res, code = eval(eval_string)
         except CodeLabError as err:
-            res = {"code":400, "message":err.message}
+            res = {"code": 400, "message": err.message}
             code = 400
             print(err.message)
         return res, code

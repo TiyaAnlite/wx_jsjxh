@@ -401,6 +401,8 @@ class hzjx_card(hzjx_msg):
                      openid=get_data["openId"])
         return
 
+    def WXupdateMember(self, wget_data):
+        pass
 
 class hzjx_mamger(hzjx_card):
 
