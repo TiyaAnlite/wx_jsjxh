@@ -490,9 +490,9 @@ class hzjx_card(hzjx_msg):
                     return "<h1>信息提交失败：你的原始卡片信息似乎有问题</h1><h2>请删除卡片后重新领取</h2>", 200
                 else:
                     return "<h1>信息提交失败：内部错误</h1><h2>{}</h2>".format(err.message), 200
-            return "<h1>自助激活成功，等留意下发通知</h1>", 200
-
-        return "<h1>信息完善完成</h1>", 200
+            return "<h1>自助激活成功，请留意下发通知</h1>", 200
+        else:
+            return "<h1>信息完善完成</h1>", 200
 
         
 
