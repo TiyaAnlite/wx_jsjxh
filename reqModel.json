@@ -31,5 +31,11 @@
     "getFaceInfo": {
         "session": "str",
         "checkid": "int"
+    },
+    "WXupdateMember": {
+        "activate_ticket": "str",
+        "openid": "str",
+        "card_id": "str",
+        "encrypt_code": "str"
     }
 }

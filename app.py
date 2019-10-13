@@ -49,18 +49,23 @@ def wechat_socket():
         return res, code
 
 
-@app.route('/wx_api/<path:app_path>', methods=['POST', 'GET'])
+@app.route('/wx_api/<path:app_path>', methods=['POST'])
 def codelabApi(app_path):
     if request.method == 'POST':
         data = request.get_json()
+    res, code = app_router.route(
+        target="api", path=app_path, data=data)
+    return jsonify(res), code
+
+@app.route('/interface/<path:app_path>', methods=['GET'])
+def userInterface(app_path):
     if request.method == 'GET':
         data = dict(request.args)
         for k in data:
             data[k] = data[k][0]
     res, code = app_router.route(
-        target="api", path=app_path, data=data)
-    return jsonify(res), code
-
+        target="interface", path=app_path, data=data)
+    return res, code
 
 @app.route('/faceCheckIn')
 def faceCheckIn():

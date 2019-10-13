@@ -7,6 +7,9 @@
     "sock_get": {
         ".": "HZJX.verify"
     },
+    "interface":{
+        "WXupdateMember": "HZJX.WXupdateMember"
+    },
     "api": {
         "updateMember": "HZJX.updateMember",
         "login": "HZJX.login",
@@ -16,8 +19,7 @@
         "faceCheckIn": "HZJX.faceCheckIn",
         "faceCheckOut": "HZJX.faceCheckOut",
         "getFaceList": "HZJX.getFaceList",
-        "getFaceInfo": "HZJX.getFaceInfo",
-        "WXupdateMember": "HZJX.WXupdateMember"
+        "getFaceInfo": "HZJX.getFaceInfo"
     },
     "HZJX": {
         "user_get_card": "UserGetCard",
