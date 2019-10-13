@@ -479,7 +479,7 @@ class hzjx_card(hzjx_msg):
             else:
                 return "<h1>信息提交失败：内部错误</h1><h2>{}</h2>".format(err.message), 200
         check = self.sql.finder_single(fulltext_mode=[], table="wxCard", keyword_line=["cardCode"], keyword=[code], line=["isActive", "timestamp"])[0]
-        if check:
+        if check["isActive"]:
             order = 0
             if check["timestamp"] < 1570618800:
                 order = 1
