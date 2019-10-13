@@ -353,7 +353,7 @@ class hzjx_card(hzjx_msg):
         # 第二步：解码加密code
         code_decoded = urllib.parse.unquote(
             post_data["encrypt_code"])  # URLdecode
-        code = self.decryptCode(code_decoded)
+        code = int(self.decryptCode(code_decoded))
 
         # 第三步：查找在库卡数据
         check = self.sql.finder_single(fulltext_mode=[], table="wxCard", line=["dataId"], keyword_line=[
@@ -478,7 +478,8 @@ class hzjx_card(hzjx_msg):
                 return "<h1>信息提交失败：你的原始卡片信息似乎有问题</h1><h2>请删除卡片后重新领取</h2>", 200
             else:
                 return "<h1>信息提交失败：内部错误</h1><h2>{}</h2>".format(err.message), 200
-        check = self.sql.finder_single(fulltext_mode=[], table="wxCard", keyword_line=["cardCode"], keyword=[code], line=["isActive", "timestamp"])[0]
+        check = self.sql.finder_single(fulltext_mode=[], table="wxCard", keyword_line=[
+                                       "cardCode"], keyword=[code], line=["isActive", "timestamp"])[0]
         if check["isActive"]:
             order = 0
             if check["timestamp"] < 1570618800:
@@ -493,8 +494,6 @@ class hzjx_card(hzjx_msg):
             return "<h1>自助激活成功，请留意下发通知</h1>", 200
         else:
             return "<h1>信息完善完成</h1>", 200
-
-        
 
 
 class hzjx_mamger(hzjx_card):
@@ -520,13 +519,16 @@ class hzjx_mamger(hzjx_card):
 
         code = self.sql.finder_single(fulltext_mode=[], table="wxCard", keyword_line=["cardCode_crypt"], keyword=[
                                       post_data["code"]], line=["cardCode"])[0]["cardCode"]
+        wx_realcode = str(code)
+        while len(wx_realcode) < 12:
+            wx_realcode = "0" + wx_realcode  # 首位补零
         self.sql.adder_single(fulltext_mode=[], table="wxCard", keyword_line=[
                               "cardCode"], keyword=[code], line=["isActive"], value=[1])
         self.logAction(doUser, "onActive")
         if "order_id" in post_data:
-            self.doActiveCard(code, post_data["order_id"])
+            self.doActiveCard(wx_realcode, post_data["order_id"])
         else:
-            self.doActiveCard(code)
+            self.doActiveCard(wx_realcode)
         self.logAction(doUser, "onActive_wx")
         return {"code": 200}, 200
 
