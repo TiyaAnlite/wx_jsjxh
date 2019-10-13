@@ -256,7 +256,7 @@ class hzjx_func(hzjx_msg):
         content = "[签到操作完成]\n序号：{queue_num}\n姓名：{Name}"
         res = reply.TextMsg(
             scanData["FromUserName"], scanData["ToUserName"], content=content.format(**callback))
-        
+
         self.logAction(doUser, "faceCheckIn_scan")
         return res.send(), 200
 
@@ -272,6 +272,8 @@ class hzjx_card(hzjx_msg):
             resdata = response.json()
             if resdata["errcode"] == 40014:
                 token = self.getToken(force_update=True)
+            elif resdata["errcode"] == 40056:
+                raise CodeLabError("Func:doActiveCard:40056")
             elif resdata["errcode"] == 0:
                 break
             else:
@@ -286,7 +288,8 @@ class hzjx_card(hzjx_msg):
         '''触发客服消息为用户发卡'''
         openid = wpost_data.FromUserName
         token = self.getToken()
-        data = dict(touser=openid, msgtype="wxcard", wxcard=dict(card_id="pYABYsxX1J9OO7dlcPocD35EW7T4"))
+        data = dict(touser=openid, msgtype="wxcard", wxcard=dict(
+            card_id="pYABYsxX1J9OO7dlcPocD35EW7T4"))
         while True:
             params = dict(access_token=token)
             response = requests.post(
@@ -336,6 +339,7 @@ class hzjx_card(hzjx_msg):
                 phone = i["value"]
 
         department = False
+        sid = False  # 学号不再是必填项
         for x in resdata["info"]["custom_field_list"]:  # 自定义类目
             if x["name"] == "学号":
                 sid = x["value"]
@@ -359,10 +363,16 @@ class hzjx_card(hzjx_msg):
         check = check[0]["dataId"]
 
         # 第四步：更新新会员信息
-        self.sql.adder_single(fulltext_mode=[], table="wxUser", keyword_line=["cardTable"], keyword=[check], line=[
-                              "cardTable", "name", "sId", "roomId", "phone", "department"], value=[check, name, sid, int(roomfloor + room), phone, department])
+        if sid:
+            self.sql.adder_single(fulltext_mode=[], table="wxUser", keyword_line=["cardTable"], keyword=[check], line=[
+                "cardTable", "name", "sId", "roomId", "phone", "department"], value=[check, name, sid, int(roomfloor + room), phone, department])
 
-        return {"code": 200, "name": name, "sid": sid}, 200
+            return {"code": 200, "name": name, "sid": sid}, 200
+        else:
+            self.sql.adder_single(fulltext_mode=[], table="wxUser", keyword_line=["cardTable"], keyword=[check], line=[
+                "cardTable", "name", "roomId", "phone", "department"], value=[check, name, int(roomfloor + room), phone, department])
+
+            return {"code": 200, "name": name}, 200
 
     def doActiveCard(self, code, order_id=0):
         '''调用微信接口激活微信会员卡'''
@@ -403,6 +413,8 @@ class hzjx_card(hzjx_msg):
             resdata = response.json()
             if resdata["errcode"] == 40014:
                 token = self.getToken(force_update=True)
+            elif resdata["errcode"] == 40056:
+                raise CodeLabError("Func:doActiveCard:40056")
             elif resdata["errcode"] == 0:
                 break
             else:
@@ -420,9 +432,70 @@ class hzjx_card(hzjx_msg):
                      openid=get_data["openId"])
         return
 
-    def WXupdateMember(self, wget_data):
-        '''会员信息更新GET兼容接口'''
-        pass
+    def WXupdateMember(self, get_data):
+        '''会员信息更新GET兼容接口
+        对于之前未成功激活会员会自动激活'''
+        # 对于提交的数据，先进行检查
+        token = self.getToken()
+        ticket_decoded = urllib.parse.unquote(
+            get_data["activate_ticket"])  # URLdecode
+        data = dict(activate_ticket=ticket_decoded)
+        while True:
+            params = dict(access_token=token)
+            response = requests.post(
+                "https://api.weixin.qq.com/card/membercard/activatetempinfo/get?", params=params, json=data)
+            resdata = response.json()
+            if resdata["errcode"] == 40014:
+                token = self.getToken(force_update=True)
+            elif resdata["errcode"] == 0:
+                break
+            else:
+                return "<h1>信息提交失败：内部错误</h1><h2>Func:WXupdateMember:Wechat return errorcode {}</h2>".format(resdata["errcode"]), 200
+        for x in resdata["info"]["custom_field_list"]:  # 自定义类目
+            if x["name"] == "宿舍号":
+                room = x["value"]
+        try:
+            int(room)
+        except ValueError:
+            return "<h1>信息提交失败：宿舍号'{}'不是纯数字</h1><h2>宿舍号只能是三位数门牌号（不包括宿舍楼）</h2>".format(room), 200
+        if not len(room) == 3:
+            return "<h1>信息提交失败：{}不是三位数门牌号</h1><h2>宿舍号只能是三位数门牌号（不包括宿舍楼）</h2>".format(room), 200
+
+        # 内部调用原始接口进行上传
+        try:
+            res, code = self.updateMember(get_data)
+            del res
+        except CodeLabError as err:
+            return "<h1>信息提交失败：内部错误</h1><h2>{}</h2>".format(err.message), 200
+
+        # 若符合条件，将会自动激活(适用于完善信息)
+        code_decoded = urllib.parse.unquote(
+            get_data["encrypt_code"])  # URLdecode
+        try:
+            code = self.decryptCode(code_decoded)
+        except CodeLabError as err:
+            if err.message == "Func:doActiveCard:40056":
+                return "<h1>信息提交失败：你的原始卡片信息似乎有问题</h1><h2>请删除卡片后重新领取</h2>", 200
+            else:
+                return "<h1>信息提交失败：内部错误</h1><h2>{}</h2>".format(err.message), 200
+        check = self.sql.finder_single(fulltext_mode=[], table="wxCard", keyword_line=["cardCode"], keyword=[code], line=["isActive", "timestamp"])[0]
+        if check:
+            order = 0
+            if check["timestamp"] < 1570618800:
+                order = 1
+            try:
+                self.doActiveCard(code, order_id=order)
+            except CodeLabError as err:
+                if err.message == "Func:doActiveCard:40056":
+                    return "<h1>信息提交失败：你的原始卡片信息似乎有问题</h1><h2>请删除卡片后重新领取</h2>", 200
+                else:
+                    return "<h1>信息提交失败：内部错误</h1><h2>{}</h2>".format(err.message), 200
+            return "<h1>自助激活成功，等留意下发通知</h1>", 200
+
+        return "<h1>信息完善完成</h1>", 200
+
+        
+
 
 class hzjx_mamger(hzjx_card):
 
@@ -525,7 +598,8 @@ class wx_hzjx(hzjx_func, hzjx_mamger):
         try:
             scanData = dict(FromUserName=wpost_data.FromUserName)
             scanData["ToUserName"] = wpost_data.ToUserName
-            scanData["ScanResult"] = wpost_data.rawData.find('ScanCodeInfo').find('ScanResult').text
+            scanData["ScanResult"] = wpost_data.rawData.find(
+                'ScanCodeInfo').find('ScanResult').text
             EventKey = wpost_data.rawData.find('EventKey').text
             eval_string = "self." + \
                 self.scanRoute[EventKey] + "(scanData)"
@@ -546,6 +620,7 @@ class wx_hzjx(hzjx_func, hzjx_mamger):
             res = "success"
             code = 200
         return res, code
+
 
 class CodeLabError(Exception):
     '''自定义异常类
