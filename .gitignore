@@ -109,3 +109,6 @@ venv.bak/
 # Api Config
 config/sql_conf.json
 config/jsjxh.json
+
+# wxCheck
+wxCheck.txt

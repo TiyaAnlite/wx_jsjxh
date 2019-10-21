@@ -1,0 +1,41 @@
+{
+    "updateMember": {
+        "activate_ticket": "str",
+        "openid": "str",
+        "card_id": "str",
+        "encrypt_code": "str",
+        "outer_str": "str"
+    },
+    "login": {
+        "code": "int"
+    },
+    "cardInfo": {
+        "session": "str",
+        "code": "str"
+    },
+    "activeCard": {
+        "session": "str",
+        "order_id": "int",
+        "code": "str"
+    },
+    "faceCheckIn": {
+        "code": "int"
+    },
+    "faceCheckOut": {
+        "session": "str",
+        "checkid": "int"
+    },
+    "getFaceList": {
+        "session": "str"
+    },
+    "getFaceInfo": {
+        "session": "str",
+        "checkid": "int"
+    },
+    "WXupdateMember": {
+        "activate_ticket": "str",
+        "openid": "str",
+        "card_id": "str",
+        "encrypt_code": "str"
+    }
+}

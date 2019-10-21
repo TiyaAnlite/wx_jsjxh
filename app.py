@@ -4,12 +4,16 @@ import gevent
 import json
 import os
 from flask import Flask, request, jsonify, redirect
+from flask_cors import CORS
 
-import WXlib
+from WXlib import receive
 import handle
+from handle import CodeLabError
 
 app = Flask(__name__)
 app_http = Flask(__name__)
+CORS(app, resources=r'/*')
+CORS(app_http, resources=r'/*')
 
 
 @app_http.before_request
@@ -29,31 +33,53 @@ def index():
     return '<h1>Hello!</h1>'
 
 
-@app.route('/wx_sock')
+@app.route('/wx_sock', methods=['POST', 'GET'])
 def wechat_socket():
     if request.method == 'POST':
-        post_data = request.get_json()
+        xml_data = receive.parse_xml(request.get_data())
         res, code = app_router.route(
-            target="sock", path=".", data=post_data)
+            target="sock", path=xml_data.MsgType, data=xml_data)  # 传入XML结构对象
         return res, code
     if request.method == 'GET':
-        get_data = request.args
+        get_data = dict(request.args)
+        for k in get_data:
+            get_data[k] = get_data[k][0]
         res, code = app_router.route(
-            target="sock_get", path=".", data=get_data)
+            target="sock_get", path=".", data=get_data)  # 传入字典对象
         return res, code
+
 
 @app.route('/wx_api/<path:app_path>', methods=['POST'])
 def codelabApi(app_path):
     if request.method == 'POST':
-        post_data = request.get_json()
-        res, code = app_router.route(
-            target="api", path=app_path, data=post_data)
-        return jsonify(res), code
+        data = request.get_json()
+    res, code = app_router.route(
+        target="api", path=app_path, data=data)
+    return jsonify(res), code
+
+@app.route('/interface/<path:app_path>', methods=['GET'])
+def userInterface(app_path):
     if request.method == 'GET':
-        get_data = request.args.listvalues()
-        for i in get_data:
-            print(i, "\n")
-        return "", 200
+        data = dict(request.args)
+        for k in data:
+            data[k] = data[k][0]
+    res, code = app_router.route(
+        target="interface", path=app_path, data=data)
+    return res, code
+
+@app.route('/faceCheckIn')
+def faceCheckIn():
+    return app.send_static_file('checkin.html')
+
+
+@app.route('/faceCheckIn/MP_verify_BFxk9aicA2tZgujI.txt')
+def wxCheck():
+    return app.send_static_file('wxCheck.txt')
+
+
+@app.route('/static/<path:app_path>')
+def staticRoute(app_path):
+    return app.send_static_file(app_path)
 
 
 class router(object):
@@ -61,11 +87,21 @@ class router(object):
         self.route_list = route_list
 
     def route(self, target, path, data):
-        eval_string = self.route_list[target][path] + "(data)"
-        res, code = eval(eval_string)
+        try:
+            eval_string = self.route_list[target][path] + "(data)"
+        except KeyError:
+            res = {"code": 404}
+            code = 404
+        try:
+            res, code = eval(eval_string)
+        except CodeLabError as err:
+            res = {"code": 400, "message": err.message}
+            code = 400
+            print(err.message)
         return res, code
 
-codelab = handle.wx_hzjx(json.load(open(os.path.join("config", "resmod.json"), "r")))
+
+HZJX = handle.wx_hzjx()
 app_router = router(json.load(open(os.path.join("config", "route.json"), "r")))
 
 if __name__ == '__main__':

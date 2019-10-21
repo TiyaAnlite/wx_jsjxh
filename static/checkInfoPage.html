@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>激活页面</title>
+    <link rel="stylesheet" href="../static/css/style.css">
+    <script type="text/javascript" src="../static/js/jquery-1.11.1.js"></script>
+    <script src="../static/js/jweixin-1.4.0.js"></script>
+    <script>
+        function getQueryString(name) {
+            var reg = new RegExp('(^|&)' + name + '=([^&]*)(&|$)', 'i');
+            var r = window.location.search.substr(1).match(reg);
+            if (r != null) {
+                return unescape(r[2]);
+            }
+            return null;
+        }
+    </script>
+</head>
+
+<body>
+    <script>
+        var data = {
+            activate_ticket: getQueryString("activate_ticket"),
+            openid: getQueryString("openid"),
+            card_id: getQueryString("card_id"),
+            encrypt_code: getQueryString("encrypt_code")
+        }
+
+
+        data = JSON.stringify(data)
+        function uploadData() {
+            $.ajax(
+                {
+                    url: "https://wx.focot.cn/wx_api/updateMember",
+                    type: "post",
+                    dataType: "json",
+                    contentType: "application/json",
+                    data: data,
+                    success: function () {
+                        alert("信息提交成功");
+                    },
+                    error: function (data) {
+                        alert("请检查你填写的信息并重新提交");
+                        wx.closeWindow();
+                    }
+                }
+            )
+        }
+
+        ;
+        function getQRcode() {
+            var qrApi = "http://qr.liantu.com/api.php?text=" + getQueryString("encrypt_code")
+            window.location.href = qrApi
+        }
+    </script>
+    <div class="btn-wrapper">
+        <button type="button" class="btn" onclick="uploadData()">确认激活</button>
+    </div>
+    <canvas id="canvas"></canvas>
+    <script src="../static/js/button.js"></script>
+</body>
+
+</html>

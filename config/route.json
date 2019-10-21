@@ -1,11 +1,37 @@
 {
     "sock": {
-        ".": 123
+        "text": "HZJX.textEnter",
+        "image": "HZJX.imageEnter",
+        "event": "HZJX.eventEnter"
     },
     "sock_get": {
-        ".": "codelab.verify"
+        ".": "HZJX.verify"
+    },
+    "interface":{
+        "WXupdateMember": "HZJX.WXupdateMember"
     },
     "api": {
-        ".": 123
+        "updateMember": "HZJX.updateMember",
+        "login": "HZJX.login",
+        "cardInfo": "HZJX.cardInfo",
+        "activeCard": "HZJX.activeCard",
+        "update": "HZJX.doGetToken",
+        "faceCheckIn": "HZJX.faceCheckIn",
+        "faceCheckOut": "HZJX.faceCheckOut",
+        "getFaceList": "HZJX.getFaceList",
+        "getFaceInfo": "HZJX.getFaceInfo"
+    },
+    "HZJX": {
+        "user_get_card": "UserGetCard",
+        "subscribe": "subscribe",
+        "CLICK": "clickEvent",
+        "scancode_waitmsg": "scanPush",
+        "scancode_push": "scanPush",
+        "ScanPush": {
+            "FaceCheckIn": "faceCheckIn_scan"
+        },
+        "ClickEvent": {
+            "GetCard": "sendCardMsg"
+        }
     }
 }
