@@ -6,7 +6,7 @@ gevent.monkey.patch_all()
 
 debug = False
 loglevel = 'info'
-bind = '0.0.0.0:7000'
+bind = '0.0.0.0:6000'
 pidfile = 'log/gunicorn.pid'
 logfile = 'log/debug.log'
 #certfile = 'server.crt'
