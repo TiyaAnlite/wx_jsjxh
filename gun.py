@@ -6,11 +6,11 @@ gevent.monkey.patch_all()
 
 debug = False
 loglevel = 'info'
-bind = '0.0.0.0:443'
+bind = '0.0.0.0:7000'
 pidfile = 'log/gunicorn.pid'
 logfile = 'log/debug.log'
-certfile = 'server.crt'
-keyfile = 'server.key'
+#certfile = 'server.crt'
+#keyfile = 'server.key'
 
 # 启动的进程数
 # workers = multiprocessing.cpu_count() * 2 + 1

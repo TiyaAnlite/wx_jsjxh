@@ -112,3 +112,6 @@ config/jsjxh.json
 
 # wxCheck
 wxCheck.txt
+
+#PyCharm
+.idea/
